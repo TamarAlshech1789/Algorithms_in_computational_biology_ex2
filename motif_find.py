@@ -1,6 +1,7 @@
 import argparse
 import pandas as pd
 import numpy as np
+from numpy import logsumexp
 
 def build_tau_forward(p, k, num_states, index_b1, index_b2, index_b_end):
 
@@ -29,32 +30,30 @@ def forward(seq,initial_emission, p, q):
     emission_table_bottom.columns = emission_table.columns
     emission_table_bottom.index = [i + k for i in range (num_rows - k)]
 
-    print(emission_table)
+    #print(emission_table)
     emission_table = emission_table.append(emission_table_bottom)
-    print(emission_table)
+    #print(emission_table)
 
     #k = len(emission_table['A'])
     #num_rows = k + 3
-    num_cols = len(seq) + 1         #todo : has a column to B_end
+    num_cols = len(seq)         #todo : has a column to B_end
     index_b1 = num_rows - 3
     index_b2 = num_rows - 2
     index_b_end = num_rows -1
     forward_table = [[0 for j in range(num_cols)] for i in range(num_rows)]
     tau = build_tau_forward(p, k, num_rows, index_b1, index_b2, index_b_end)
 
-    print(forward_table)
-    print(tau)
+    #print(forward_table)
+    #print(tau)
 
-    forward_table[index_b1][0] = q * 0.25
+    forward_table[index_b1][0] = np.log(q * 0.25)
     forward_table[index_b2][0] = (1 - q) * 0.25
-    # for j in range(1, num_cols):   #todo : without te last column B_end
-    #     for i in range(num_rows):
-    #         if i == num_rows - 2:
-    #             tau = 1-p
-    #         elif i == num_rows - 1:
-    #             if j ==
-    #
-    #         forward_table[i][j] += forward_table[i][j-1] *
+    for j in range(1, num_cols):   #todo : without te last column B_end
+        for i in range(num_rows):
+            for k in range(num_rows):
+                forward_table[i][j] = np.logaddexp(forward_table[k][j-1] * tau[k][i]  * emission_table.loc[i][seq[j]],
+                                                   forward_table[i][j])
+    print(forward_table)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -69,7 +68,7 @@ def main():
         raise NotImplementedError
 
     elif args.alg == 'forward':
-        forward(args.seq, args.initial_emission, args.p, args.q)
+        forward(args.seq + '$', args.initial_emission, args.p, args.q)
 
     elif args.alg == 'backward':
         raise NotImplementedError
